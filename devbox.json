@@ -1,8 +1,5 @@
 {
   "packages": ["go@1.24.4", "curl@8.14.1"],
-  "nixpkgs": {
-    "commit": "e56e0beed4312a89b60fe312ee2241f7a1627f76"
-  },
   "shell": {
     "init_hook": [
       "echo '🚀 Go DevBox environment loaded!'",

@@ -3,6 +3,8 @@ name: CI/CD with DevBox Cache
 on:
   push:
     branches: [main, develop]
+    paths-ignore:
+      - "**/*.md"
   pull_request:
     branches: [main]
 
