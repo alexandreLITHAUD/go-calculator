@@ -22,17 +22,6 @@ jobs:
             max-jobs = auto
             cores = 0
 
-      # Cache DevBox
-      - name: Cache DevBox
-        uses: actions/cache@v4
-        with:
-          path: |
-            ~/.cache/devbox
-            ~/.local/share/devbox
-          key: ${{ runner.os }}-devbox-${{ hashFiles('devbox.json', 'devbox.lock') }}
-          restore-keys: |
-            ${{ runner.os }}-devbox-
-
       # Cache Go modules
       - name: Cache Go modules
         uses: actions/cache@v4
@@ -89,16 +78,6 @@ jobs:
       - name: Install Nix
         uses: cachix/install-nix-action@v31
 
-      - name: Cache DevBox
-        uses: actions/cache@v4
-        with:
-          path: |
-            ~/.cache/devbox
-            ~/.local/share/devbox
-          key: ${{ runner.os }}-devbox-${{ hashFiles('devbox.json', 'devbox.lock') }}
-          restore-keys: |
-            ${{ runner.os }}-devbox-
-
       - name: Cache Go modules
         uses: actions/cache@v4
         with:
@@ -111,6 +90,8 @@ jobs:
 
       - name: Install DevBox
         uses: jetpack-io/devbox-install-action@v0.13.0
+        with:
+          enable-cache: true
 
       # Build de l'application
       - name: Build Application
@@ -137,16 +118,6 @@ jobs:
       - name: Install Nix
         uses: cachix/install-nix-action@v31
 
-      - name: Cache DevBox
-        uses: actions/cache@v4
-        with:
-          path: |
-            ~/.cache/devbox
-            ~/.local/share/devbox
-          key: ${{ runner.os }}-devbox-${{ hashFiles('devbox.json', 'devbox.lock') }}
-          restore-keys: |
-            ${{ runner.os }}-devbox-
-
       - name: Cache Go modules
         uses: actions/cache@v4
         with:
@@ -159,6 +130,8 @@ jobs:
 
       - name: Install DevBox
         uses: jetpack-io/devbox-install-action@v0.13.0
+        with:
+          enable-cache: true
 
       # Benchmarks
       - name: Run Benchmarks
@@ -189,11 +162,11 @@ jobs:
             // Extract the caches array from the response
             const caches = cachesData.actions_caches;
 
-            // Garde seulement les 4 caches les plus récents
+            // Garde seulement les 3 caches les plus récents
             // Sort caches by creation date in descending order and keep only the first 5
             const oldCaches = caches
                 .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
-                .slice(4); // Keep the first 4, so slice from index 5 onwards to get old caches
+                .slice(3); // Keep the first 3, so slice from index 5 onwards to get old caches
 
             for (const cache of oldCaches) {
                 console.log(`Deleting cache: ${cache.key} (ID: ${cache.id})`);
