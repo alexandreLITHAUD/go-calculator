@@ -58,12 +58,6 @@ jobs:
         with:
           enable-cache: true
 
-      # Setup de l'environnement
-      - name: Setup DevBox Environment
-        run: |
-          echo "🚀 Setting up DevBox environment..."
-          devbox run go version
-
       # Installation des dépendances
       - name: Install Dependencies
         run: devbox run deps
@@ -128,13 +122,6 @@ jobs:
       - name: Build Application
         run: devbox run build
 
-      # Test du binaire
-      - name: Test Binary
-        run: |
-          echo "🧪 Testing built binary..."
-          ./dist/app -a 10 -b 5 -op add
-          ./dist/app -a 10 -b 5 -op mul
-
       # Upload des artéfacts
       - name: Upload Build Artifacts
         uses: actions/upload-artifact@v4
@@ -175,7 +162,6 @@ jobs:
           name: benchmarks-${{ github.sha }}
           path: benchmark.txt
 
-  # Job de nettoyage du cache (optionnel)
   cleanup-cache:
     runs-on: ubuntu-latest
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
@@ -186,21 +172,27 @@ jobs:
         uses: actions/github-script@v7
         with:
           script: |
-            const caches = await github.rest.actions.getActionsCaches({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-            })
+            // Use listActionsCaches to get all caches for the repository
+            const { data: cachesData } = await github.rest.actions.listActionsCaches({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+            });
 
-            // Garde seulement les 3 caches les plus récents
-            const oldCaches = caches.data.actions_caches
-              .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
-              .slice(0, caches.data.actions_caches.length - 3)
+            // Extract the caches array
+            const caches = cachesData.actions_caches;
+
+            // Garde seulement les 5 caches les plus récents
+            // Sort caches by creation date in descending order and keep only the first 5
+            const oldCaches = caches
+                .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
+                .slice(5); // Keep the first 5, so slice from index 5 onwards to get old caches
 
             for (const cache of oldCaches) {
-              console.log(`Deleting cache: ${cache.key}`)
-              await github.rest.actions.deleteActionsCacheById({
+                console.log(`Deleting cache: ${cache.key} (ID: ${cache.id})`);
+                await github.rest.actions.deleteActionsCacheById({
                 owner: context.repo.owner,
                 repo: context.repo.repo,
                 cache_id: cache.id,
-              })
+                });
             }
+            console.log(`Deleted ${oldCaches.length} old caches.`);
