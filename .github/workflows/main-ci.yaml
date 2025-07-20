@@ -62,7 +62,7 @@ jobs:
       - name: Setup DevBox Environment
         run: |
           echo "🚀 Setting up DevBox environment..."
-          devbox shell -- go version
+          devbox run go version
 
       # Installation des dépendances
       - name: Install Dependencies
@@ -78,14 +78,11 @@ jobs:
 
       # Tests unitaires
       - name: Run Tests
-        run: |
-          devbox run test
+        run: devbox run test
 
       # Tests de couverture
       - name: Run Coverage
-        run: |
-          devbox shell -- go test -race -coverprofile=coverage.out -covermode=atomic ./...
-          devbox shell -- go tool cover -html=coverage.out -o coverage.html
+        run: devbox run coverage
 
       # Upload de la couverture
       - name: Upload Coverage
@@ -170,9 +167,7 @@ jobs:
 
       # Benchmarks
       - name: Run Benchmarks
-        run: |
-          echo "⚡ Running benchmarks..."
-          devbox shell -- go test -bench=. -benchmem ./... | tee benchmark.txt
+        run: devbox run benchmark
 
       - name: Upload Benchmark Results
         uses: actions/upload-artifact@v4
@@ -199,7 +194,7 @@ jobs:
             // Garde seulement les 3 caches les plus récents
             const oldCaches = caches.data.actions_caches
               .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
-              .slice(3)
+              .slice(0, caches.data.actions_caches.length - 3)
 
             for (const cache of oldCaches) {
               console.log(`Deleting cache: ${cache.key}`)

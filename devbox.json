@@ -18,6 +18,17 @@
         "echo '✅ Build complete: ./dist/app'"
       ],
       "test": ["echo '🧪 Running tests...'", "go test -v ./..."],
+      "coverage": [
+        "echo '📊 Running tests with coverage...'",
+        "go test -race -coverprofile=coverage.out -covermode=atomic ./...",
+        "go tool cover -html=coverage.out -o coverage.html",
+        "echo '✅ Coverage report generated: coverage.html'"
+      ],
+      "benchmark": [
+        "echo '⚡ Running benchmarks...'",
+        "go test -bench=. -benchmem ./... | tee benchmark.txt",
+        "echo '✅ Benchmark results saved to benchmark.txt'"
+      ],
       "clean": [
         "echo '🧹 Cleaning build artifacts...'",
         "rm -rf dist/",
