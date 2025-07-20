@@ -1,0 +1,36 @@
+{
+  "packages": ["go@1.24.4", "curl@8.14.1"],
+  "nixpkgs": {
+    "commit": "e56e0beed4312a89b60fe312ee2241f7a1627f76"
+  },
+  "shell": {
+    "init_hook": [
+      "echo '🚀 Go DevBox environment loaded!'",
+      "echo 'Go version: $(go version)'",
+      "echo 'Git version: $(git --version)'",
+      "go mod download || echo 'No go.mod found yet'"
+    ],
+    "scripts": {
+      "dev": ["echo '🔧 Starting development environment...'", "go run ."],
+      "build": [
+        "echo '🔨 Building Go application...'",
+        "go build -o dist/app .",
+        "echo '✅ Build complete: ./dist/app'"
+      ],
+      "test": ["echo '🧪 Running tests...'", "go test -v ./..."],
+      "clean": [
+        "echo '🧹 Cleaning build artifacts...'",
+        "rm -rf dist/",
+        "go clean"
+      ],
+      "deps": [
+        "echo '📦 Installing dependencies...'",
+        "go mod tidy",
+        "go mod download"
+      ],
+      "fmt": ["echo '🎨 Formatting Go code...'", "go fmt ./..."],
+      "lint": ["echo '🔍 Linting Go code...'", "go vet ./..."],
+      "install": ["echo '📥 Installing application...'", "go install ."]
+    }
+  }
+}

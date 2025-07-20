@@ -1,0 +1,211 @@
+name: CI/CD with DevBox Cache
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install Nix
+        uses: cachix/install-nix-action@v31
+        with:
+          github_access_token: ${{ secrets.GITHUB_TOKEN }}
+          extra_nix_config: |
+            max-jobs = auto
+            cores = 0
+
+      # Cache principal du store Nix
+      - name: Cache Nix Store
+        uses: actions/cache@v4
+        with:
+          path: /nix/store
+          key: ${{ runner.os }}-nix-store-${{ hashFiles('devbox.json', 'devbox.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-nix-store-
+
+      # Cache DevBox
+      - name: Cache DevBox
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cache/devbox
+            ~/.local/share/devbox
+          key: ${{ runner.os }}-devbox-${{ hashFiles('devbox.json', 'devbox.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-devbox-
+
+      # Cache Go modules
+      - name: Cache Go modules
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cache/go-build
+            ~/go/pkg/mod
+          key: ${{ runner.os }}-go-${{ hashFiles('go.sum', 'go.mod') }}
+          restore-keys: |
+            ${{ runner.os }}-go-
+
+      - name: Install DevBox
+        uses: jetpack-io/devbox-install-action@v0.13.0
+        with:
+          enable-cache: true
+
+      # Setup de l'environnement
+      - name: Setup DevBox Environment
+        run: |
+          echo "🚀 Setting up DevBox environment..."
+          devbox shell -- go version
+
+      # Installation des dépendances
+      - name: Install Dependencies
+        run: devbox run deps
+
+      # Formatage du code
+      - name: Format Code
+        run: devbox run fmt
+
+      # Linting
+      - name: Lint Code
+        run: devbox run lint
+
+      # Tests unitaires
+      - name: Run Tests
+        run: |
+          devbox run test
+
+      # Tests de couverture
+      - name: Run Coverage
+        run: |
+          devbox shell -- go test -race -coverprofile=coverage.out -covermode=atomic ./...
+          devbox shell -- go tool cover -html=coverage.out -o coverage.html
+
+      # Upload de la couverture
+      - name: Upload Coverage
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-report
+          path: |
+            coverage.out
+            coverage.html
+
+  build:
+    needs: test
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install Nix
+        uses: cachix/install-nix-action@v31
+
+      # Réutilisation du cache des tests
+      - name: Cache Nix Store
+        uses: actions/cache@v4
+        with:
+          path: /nix/store
+          key: ${{ runner.os }}-nix-store-${{ hashFiles('devbox.json', 'devbox.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-nix-store-
+
+      - name: Cache DevBox
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cache/devbox
+            ~/.local/share/devbox
+          key: ${{ runner.os }}-devbox-${{ hashFiles('devbox.json', 'devbox.lock') }}
+
+      - name: Install DevBox
+        uses: jetpack-io/devbox-install-action@v0.13.0
+
+      # Build de l'application
+      - name: Build Application
+        run: devbox run build
+
+      # Test du binaire
+      - name: Test Binary
+        run: |
+          echo "🧪 Testing built binary..."
+          ./dist/app -a 10 -b 5 -op add
+          ./dist/app -a 10 -b 5 -op mul
+
+      # Upload des artéfacts
+      - name: Upload Build Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: go-calculator-${{ github.sha }}
+          path: |
+            dist/
+            *.md
+
+  benchmark:
+    needs: test
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install Nix
+        uses: cachix/install-nix-action@v31
+
+      - name: Cache Nix Store
+        uses: actions/cache@v4
+        with:
+          path: /nix/store
+          key: ${{ runner.os }}-nix-store-${{ hashFiles('devbox.json', 'devbox.lock') }}
+
+      - name: Install DevBox
+        uses: jetpack-io/devbox-install-action@v0.13.0
+
+      # Benchmarks
+      - name: Run Benchmarks
+        run: |
+          echo "⚡ Running benchmarks..."
+          devbox shell -- go test -bench=. -benchmem ./... | tee benchmark.txt
+
+      - name: Upload Benchmark Results
+        uses: actions/upload-artifact@v4
+        with:
+          name: benchmarks-${{ github.sha }}
+          path: benchmark.txt
+
+  # Job de nettoyage du cache (optionnel)
+  cleanup-cache:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    needs: [test, build]
+
+    steps:
+      - name: Cleanup old caches
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const caches = await github.rest.actions.getActionsCaches({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+            })
+
+            // Garde seulement les 3 caches les plus récents
+            const oldCaches = caches.data.actions_caches
+              .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
+              .slice(3)
+
+            for (const cache of oldCaches) {
+              console.log(`Deleting cache: ${cache.key}`)
+              await github.rest.actions.deleteActionsCacheById({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                cache_id: cache.id,
+              })
+            }
