@@ -40,7 +40,7 @@
       "lint": ["echo '🔍 Linting Go code...'", "go vet ./..."],
       "lint-thorough": [
         "echo '🔍 Thorough linting with golangci-lint...'",
-        "golangci-lint run --timeout=5m"
+        "golangci-lint run --timeout=5m --issues-exit-code=1"
       ],
       "install": ["echo '📥 Installing application...'", "go install ."]
     }
