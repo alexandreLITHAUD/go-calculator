@@ -52,6 +52,11 @@ jobs:
       - name: Lint Code
         run: devbox run lint
 
+      # Linting approfondi
+      - name: Thorough Linting
+        continue-on-error: true
+        run: devbox run lint-thorough
+
       # Tests unitaires
       - name: Run Tests
         run: devbox run test

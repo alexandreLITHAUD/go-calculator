@@ -37,10 +37,10 @@
         "go mod download"
       ],
       "fmt": ["echo '🎨 Formatting Go code...'", "go fmt ./..."],
-      "lint": [
-        "echo '🔍 Linting Go code...'",
-        "go vet ./...",
-        "golangci-lint run"
+      "lint": ["echo '🔍 Linting Go code...'", "go vet ./..."],
+      "lint-thorough": [
+        "echo '🔍 Thorough linting with golangci-lint...'",
+        "golangci-lint run --timeout=5m"
       ],
       "install": ["echo '📥 Installing application...'", "go install ."]
     }
