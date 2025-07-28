@@ -56,6 +56,7 @@ jobs:
       - name: Thorough Linting
         continue-on-error: true
         run: |
+          set +e
           OUTPUT=$(devbox run lint-thorough 2>&1)
           if [ $? -ne 0 ]; then
             echo "::warning::🔍 Linting issues found:\n$OUTPUT"
