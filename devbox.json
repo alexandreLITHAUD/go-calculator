@@ -1,10 +1,16 @@
 {
-  "packages": ["go@1.24.4", "curl@8.14.1"],
+  "packages": [
+    "go@1.24.4",
+    "pre-commit@4.2.0",
+    "git@2.50.0",
+    "golangci-lint@2.3.0"
+  ],
   "shell": {
     "init_hook": [
       "echo '🚀 Go DevBox environment loaded!'",
       "echo 'Go version: $(go version)'",
       "echo 'Git version: $(git --version)'",
+      "pre-commit install --install-hooks || echo 'No pre-commit hooks installed yet'",
       "go mod download || echo 'No go.mod found yet'"
     ],
     "scripts": {
@@ -37,7 +43,11 @@
         "go mod download"
       ],
       "fmt": ["echo '🎨 Formatting Go code...'", "go fmt ./..."],
-      "lint": ["echo '🔍 Linting Go code...'", "go vet ./..."],
+      "lint": [
+        "echo '🔍 Linting Go code...'",
+        "go vet ./...",
+        "golangci-lint run"
+      ],
       "install": ["echo '📥 Installing application...'", "go install ."]
     }
   }
