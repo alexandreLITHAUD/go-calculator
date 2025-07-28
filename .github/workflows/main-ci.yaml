@@ -59,7 +59,7 @@ jobs:
           set +e
           OUTPUT=$(devbox run lint-thorough 2>&1)
           if [ $? -ne 0 ]; then
-            echo "::notice title=Linting Issues::🔍 Found linting issues:%0A$OUTPUT"
+            echo "::warning title=Linting Issues::🔍 Found linting issues:"
             echo "$OUTPUT"
             exit 0
           fi
